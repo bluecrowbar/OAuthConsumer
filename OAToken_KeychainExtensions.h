@@ -12,8 +12,18 @@
 
 @interface OAToken (OAToken_KeychainExtensions)
 
+#if TARGET_OS_IPHONE
+
+- (id)initWithKeychainUsingAppName:(NSString *)name serviceProviderName:(NSString *)provider;
+- (OSStatus)storeInDefaultKeychainWithAppName:(NSString *)name serviceProviderName:(NSString *)provider;
+- (OSStatus)deleteFromDefaultKeychainWithAppName:(NSString *)name serviceProviderName:(NSString *)provider;
+
+#else
+
 - (id)initWithKeychainUsingAppName:(NSString *)name serviceProviderName:(NSString *)provider;
 - (OSStatus)storeInDefaultKeychainWithAppName:(NSString *)name serviceProviderName:(NSString *)provider;
 - (OSStatus)storeInKeychain:(SecKeychainRef)keychain appName:(NSString *)name serviceProviderName:(NSString *)provider;
+
+#endif
 
 @end

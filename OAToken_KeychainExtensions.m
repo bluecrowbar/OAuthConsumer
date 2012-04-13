@@ -10,6 +10,56 @@
 
 @implementation OAToken (OAToken_KeychainExtensions)
 
+#if TARGET_OS_IPHONE
+
+- (id)initWithKeychainUsingAppName:(NSString *)name serviceProviderName:(NSString *)provider 
+{
+    [super init];
+	
+	NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
+	[attributes setValue:(id)kSecClassGenericPassword forKey:(id)kSecClass];
+	[attributes setValue:[NSString stringWithFormat:@"%@::OAuth::%@", name, provider] forKey:(id)kSecAttrService];
+	[attributes setValue:[NSNumber numberWithBool:YES] forKey:(__bridge id)kSecReturnAttributes];
+	[attributes setValue:[NSNumber numberWithBool:YES] forKey:(__bridge id)kSecReturnData];
+	
+	NSMutableDictionary *outDictionary = nil;
+	OSStatus status = noErr;
+	status = SecItemCopyMatching((CFDictionaryRef)attributes, (CFTypeRef *)&outDictionary);
+	if (status != noErr) {
+		return nil;
+	}
+	
+	self.key = [outDictionary valueForKey:kSecAttrAccount];
+	self.secret = [[NSString alloc] initWithData:[outDictionary valueForKey:kSecValueData] encoding:NSUTF8StringEncoding];
+    return self;
+}
+
+
+- (OSStatus)storeInDefaultKeychainWithAppName:(NSString *)name serviceProviderName:(NSString *)provider 
+{
+	NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
+	[attributes setValue:(id)kSecClassGenericPassword forKey:(id)kSecClass];
+	[attributes setValue:[NSString stringWithFormat:@"%@::OAuth::%@", name, provider] forKey:(id)kSecAttrService];
+	[attributes setValue:self.key forKey:(id)kSecAttrAccount];
+	[attributes setValue:[self.secret dataUsingEncoding:NSUTF8StringEncoding] forKey:(id)kSecValueData];
+	CFTypeRef result = nil;
+	OSStatus status = SecItemAdd((CFDictionaryRef)attributes, &result);
+	return status;
+}
+
+
+- (OSStatus)deleteFromDefaultKeychainWithAppName:(NSString *)name serviceProviderName:(NSString *)provider
+{
+	NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
+	[attributes setValue:(id)kSecClassGenericPassword forKey:(id)kSecClass];
+	[attributes setValue:[NSString stringWithFormat:@"%@::OAuth::%@", name, provider] forKey:(id)kSecAttrService];
+	OSStatus status = noErr;
+	status = SecItemDelete((CFDictionaryRef)attributes);
+	return status;
+}
+
+#else
+
 - (id)initWithKeychainUsingAppName:(NSString *)name serviceProviderName:(NSString *)provider 
 {
     [super init];
@@ -91,5 +141,7 @@
                                                     );
 	return status;
 }
+
+#endif
 
 @end
